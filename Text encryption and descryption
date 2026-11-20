@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Text Encryption & Decryption</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      color: #0f172a;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 540px;
+      background: #ffffff;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35);
+    }
+
+    .title {
+      text-align: center;
+      margin-bottom: 22px;
+    }
+
+    .title h1 {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .title p {
+      font-size: 14px;
+      color: #64748b;
+    }
+
+    .field {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #334155;
+    }
+
+    textarea,
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 11px 12px;
+      font-size: 14px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+    }
+
+    textarea:focus,
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #2563eb;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    button {
+      padding: 11px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .encrypt-btn {
+      background: #2563eb;
+      color: #ffffff;
+    }
+
+    .encrypt-btn:hover {
+      background: #1d4ed8;
+    }
+
+    .decrypt-btn {
+      background: #059669;
+      color: #ffffff;
+    }
+
+    .decrypt-btn:hover {
+      background: #047857;
+    }
+
+    .clear-btn {
+      background: #e2e8f0;
+      color: #334155;
+    }
+
+    .clear-btn:hover {
+      background: #cbd5e1;
+    }
+
+    .output-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .copy-btn {
+      padding: 5px 10px;
+      font-size: 12px;
+      background: #f1f5f9;
+      color: #2563eb;
+      border: 1px solid #cbd5e1;
+    }
+
+    .copy-btn:hover {
+      background: #e2e8f0;
+    }
+
+    .message {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+
+    .error {
+      background: #fee2e2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+    }
+
+    .success {
+      background: #dcfce7;
+      color: #15803d;
+      border: 1px solid #bbf7d0;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">
+      <h1>Text Encryption & Decryption</h1>
+      <p>Caesar Cipher & XOR + Base64 Cipher</p>
+    </div>
+
+    <div class="field">
+      <label for="method">Cipher Method</label>
+      <select id="method">
+        <option value="caesar">Caesar Cipher (Numeric Key, e.g., 3)</option>
+        <option value="xor">XOR + Base64 Cipher (Text Key)</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label for="plainOrCipher">Input Text</label>
+      <textarea id="plainOrCipher" placeholder="Enter plaintext to encrypt or ciphertext to decrypt..."></textarea>
+    </div>
+
+    <div class="field">
+      <label for="keyInput">Secret Key</label>
+      <input type="text" id="keyInput" placeholder="Enter shift number or secret key" />
+    </div>
+
+    <div class="actions">
+      <button class="encrypt-btn" onclick="runCipher('encrypt')">Encrypt</button>
+      <button class="decrypt-btn" onclick="runCipher('decrypt')">Decrypt</button>
+      <button class="clear-btn" onclick="resetForm()">Clear</button>
+    </div>
+
+    <div class="field">
+      <div class="output-top">
+        <label for="resultText">Output Text</label>
+        <button class="copy-btn" onclick="copyResult()">Copy</button>
+      </div>
+      <textarea id="resultText" readonly placeholder="Result will appear here..."></textarea>
+    </div>
+
+    <div id="statusBox" class="message"></div>
+  </div>
+
+  <script>
+    function showStatus(msg, isError) {
+      const box = document.getElementById("statusBox");
+      box.textContent = msg;
+      box.className = "message " + (isError ? "error" : "success");
+      box.style.display = "block";
+    }
+
+    function caesar(text, shift, isDecrypt) {
+      const normalizedShift = isDecrypt
+        ? (26 - (shift % 26)) % 26
+        : ((shift % 26) + 26) % 26;
+
+      return text.replace(/[a-zA-Z]/g, (ch) => {
+        const base = ch <= "Z" ? 65 : 97;
+        return String.fromCharCode(((ch.charCodeAt(0) - base + normalizedShift) % 26) + base);
+      });
+    }
+
+    function xorEncrypt(text, key) {
+      let xored = "";
+      for (let i = 0; i < text.length; i++) {
+        xored += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return btoa(unescape(encodeURIComponent(xored)));
+    }
+
+    function xorDecrypt(encoded, key) {
+      const xored = decodeURIComponent(escape(atob(encoded)));
+      let plain = "";
+      for (let i = 0; i < xored.length; i++) {
+        plain += String.fromCharCode(xored.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+      }
+      return plain;
+    }
+
+    function runCipher(mode) {
+      const method = document.getElementById("method").value;
+      const text = document.getElementById("plainOrCipher").value;
+      const key = document.getElementById("keyInput").value.trim();
+      const output = document.getElementById("resultText");
+
+      if (!text.trim()) {
+        showStatus("Please enter some input text.", true);
+        return;
+      }
+
+      if (!key) {
+        showStatus("Please enter a secret key.", true);
+        return;
+      }
+
+      try {
+        if (method === "caesar") {
+          const shift = parseInt(key, 10);
+          if (Number.isNaN(shift)) {
+            showStatus("Enter a valid numeric key for Caesar Cipher.", true);
+            return;
+          }
+          output.value = caesar(text, shift, mode === "decrypt");
+        } else {
+          output.value = mode === "encrypt" ? xorEncrypt(text, key) : xorDecrypt(text, key);
+        }
+
+        showStatus(
+          mode === "encrypt" ? "Text encrypted successfully." : "Text decrypted successfully.",
+          false
+        );
+      } catch (err) {
+        showStatus("Decryption failed. Check your ciphertext and secret key.", true);
+      }
+    }
+
+    function copyResult() {
+      const output = document.getElementById("resultText");
+      if (!output.value) {
+        showStatus("There is no output to copy.", true);
+        return;
+      }
+      output.select();
+      document.execCommand("copy");
+      showStatus("Output copied to clipboard.", false);
+    }
+
+    function resetForm() {
+      document.getElementById("plainOrCipher").value = "";
+      document.getElementById("keyInput").value = "";
+      document.getElementById("resultText").value = "";
+      document.getElementById("statusBox").style.display = "none";
+    }
+  </script>
+</body>
+</html>
